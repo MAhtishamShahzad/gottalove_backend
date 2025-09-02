@@ -1,5 +1,13 @@
 export default [
   {
+    name: "strapi::body",
+    config: {
+      formLimit: "256mb", // modify form body
+      jsonLimit: "256mb", // modify JSON body
+      textLimit: "256mb", // modify text body
+    },
+  },
+  {
     name: "strapi::security",
     config: {
       contentSecurityPolicy: {
@@ -11,14 +19,14 @@ export default [
             "data:",
             "blob:",
             "market-assets.strapi.io",
-            "s3.ap-southeast-2.amazonaws.com",
+            "gottalove.s3.ap-southeast-2.amazonaws.com",
           ],
           "media-src": [
             "'self'",
             "data:",
             "blob:",
             "market-assets.strapi.io",
-            "s3.ap-southeast-2.amazonaws.com",
+            "gottalove.s3.ap-southeast-2.amazonaws.com",
           ],
           upgradeInsecureRequests: null,
         },
