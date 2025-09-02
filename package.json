@@ -17,7 +17,9 @@
   "dependencies": {
     "@strapi/plugin-cloud": "5.23.1",
     "@strapi/plugin-users-permissions": "5.23.1",
+    "@strapi/provider-upload-aws-s3": "^5.23.1",
     "@strapi/strapi": "5.23.1",
+    "aws-sdk": "^2.1692.0",
     "pg": "8.8.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",

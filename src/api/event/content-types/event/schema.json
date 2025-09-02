@@ -1,0 +1,73 @@
+{
+  "kind": "collectionType",
+  "collectionName": "events",
+  "info": {
+    "singularName": "event",
+    "pluralName": "events",
+    "displayName": "Event"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "genre_list": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::genre.genre",
+      "inversedBy": "events"
+    },
+    "Description": {
+      "type": "blocks"
+    },
+    "images": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "youtube": {
+      "type": "string"
+    },
+    "venue": {
+      "type": "string"
+    },
+    "Occurs": {
+      "type": "enumeration",
+      "enum": [
+        "daily",
+        "weekly",
+        "monthly",
+        "yearly"
+      ]
+    },
+    "start_date": {
+      "type": "date"
+    },
+    "end_date": {
+      "type": "date"
+    },
+    "terms_condition": {
+      "type": "blocks"
+    },
+    "owner": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "time_format": {
+      "type": "enumeration",
+      "enum": [
+        "hour 12",
+        "hour 24"
+      ]
+    }
+  }
+}

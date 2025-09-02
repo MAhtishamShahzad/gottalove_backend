@@ -1,0 +1,34 @@
+{
+  "kind": "collectionType",
+  "collectionName": "directory_categories",
+  "info": {
+    "singularName": "directory-category",
+    "pluralName": "directory-categories",
+    "displayName": "Directory Category"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "directory_sub_categories": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::directory-sub-category.directory-sub-category",
+      "mappedBy": "directory_category"
+    }
+  }
+}
