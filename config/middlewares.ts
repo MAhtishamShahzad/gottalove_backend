@@ -1,13 +1,5 @@
 export default [
   {
-    name: "strapi::body",
-    config: {
-      formLimit: "256mb", // modify form body
-      jsonLimit: "256mb", // modify JSON body
-      textLimit: "256mb", // modify text body
-    },
-  },
-  {
     name: "strapi::security",
     config: {
       contentSecurityPolicy: {
