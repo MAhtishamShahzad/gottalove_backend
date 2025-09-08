@@ -18,7 +18,7 @@
       "type": "text"
     },
     "body": {
-      "type": "string"
+      "type": "text"
     },
     "email": {
       "type": "string"
