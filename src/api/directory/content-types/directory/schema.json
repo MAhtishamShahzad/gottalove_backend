@@ -50,6 +50,12 @@
       "relation": "manyToOne",
       "target": "api::directory-sub-category.directory-sub-category",
       "inversedBy": "directories"
+    },
+    "directory_category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::directory-category.directory-category",
+      "inversedBy": "directories"
     }
   }
 }

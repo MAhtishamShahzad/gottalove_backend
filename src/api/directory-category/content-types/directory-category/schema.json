@@ -29,6 +29,12 @@
       "relation": "oneToMany",
       "target": "api::directory-sub-category.directory-sub-category",
       "mappedBy": "directory_category"
+    },
+    "directories": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::directory.directory",
+      "mappedBy": "directory_category"
     }
   }
 }

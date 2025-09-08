@@ -388,6 +388,10 @@ export interface ApiDirectoryCategoryDirectoryCategory
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    directories: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::directory.directory'
+    >;
     directory_sub_categories: Schema.Attribute.Relation<
       'oneToMany',
       'api::directory-sub-category.directory-sub-category'
@@ -460,6 +464,10 @@ export interface ApiDirectoryDirectory extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    directory_category: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::directory-category.directory-category'
+    >;
     directory_sub_category: Schema.Attribute.Relation<
       'manyToOne',
       'api::directory-sub-category.directory-sub-category'
