@@ -71,6 +71,9 @@
     },
     "otpExpiresAt": {
       "type": "datetime"
+    },
+    "name": {
+      "type": "string"
     }
   }
 }

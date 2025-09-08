@@ -1126,6 +1126,7 @@ export interface PluginUsersPermissionsUser
       'plugin::users-permissions.user'
     > &
       Schema.Attribute.Private;
+    name: Schema.Attribute.String;
     otpCode: Schema.Attribute.String;
     otpExpiresAt: Schema.Attribute.DateTime;
     password: Schema.Attribute.Password &
