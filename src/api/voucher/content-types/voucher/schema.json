@@ -36,6 +36,15 @@
         "videos",
         "audios"
       ]
+    },
+    "description": {
+      "type": "text"
+    },
+    "discount": {
+      "type": "biginteger"
+    },
+    "expiresAt": {
+      "type": "date"
     }
   }
 }
