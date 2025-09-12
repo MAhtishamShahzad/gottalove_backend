@@ -519,7 +519,7 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     name: Schema.Attribute.String;
     Occurs: Schema.Attribute.Enumeration<
-      ['daily', 'weekly', 'monthly', 'yearly']
+      ['once', 'daily', 'weekly', 'monthly', 'yearly']
     >;
     owner: Schema.Attribute.Relation<
       'oneToOne',

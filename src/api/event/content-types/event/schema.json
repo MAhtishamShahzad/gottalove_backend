@@ -42,6 +42,7 @@
     "Occurs": {
       "type": "enumeration",
       "enum": [
+        "once",
         "daily",
         "weekly",
         "monthly",
