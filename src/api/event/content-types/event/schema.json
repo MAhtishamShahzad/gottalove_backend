@@ -50,10 +50,10 @@
       ]
     },
     "start_date": {
-      "type": "date"
+      "type": "datetime"
     },
     "end_date": {
-      "type": "date"
+      "type": "datetime"
     },
     "terms_condition": {
       "type": "blocks"

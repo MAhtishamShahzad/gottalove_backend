@@ -508,7 +508,7 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     Description: Schema.Attribute.Blocks;
-    end_date: Schema.Attribute.Date;
+    end_date: Schema.Attribute.DateTime;
     genre_list: Schema.Attribute.Relation<'manyToOne', 'api::genre.genre'>;
     images: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
@@ -526,7 +526,7 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
       'plugin::users-permissions.user'
     >;
     publishedAt: Schema.Attribute.DateTime;
-    start_date: Schema.Attribute.Date;
+    start_date: Schema.Attribute.DateTime;
     terms_condition: Schema.Attribute.Blocks;
     time_format: Schema.Attribute.Enumeration<['hour 12', 'hour 24']>;
     updatedAt: Schema.Attribute.DateTime;
