@@ -242,14 +242,16 @@ export default {
                 username: string;
                 email: string;
                 password: string;
+                phone_number: string;
               }
             ) => {
               const email = args.email?.trim().toLowerCase();
               const username = args.username?.trim();
               const name = args.name?.trim();
               const password = args.password;
-              if (!email || !username || !password) {
-                throw new Error("email, username and password are required");
+              const phone_number = args.phone_number?.trim();
+              if (!email || !username || !password || !phone_number) {
+                throw new Error("email, username, password and phone_number are required");
               }
 
               // Ensure email/username not taken
@@ -283,6 +285,7 @@ export default {
                     password,
                     confirmed: false,
                     blocked: false,
+                    phone_number,
                     ...(authRole?.id ? { role: authRole.id } : {}),
                   },
                 }
@@ -303,6 +306,7 @@ export default {
                   email: created.email,
                   username: created.username,
                   name: created.name,
+                  phone_number: created.phone_number,
                   confirmed: created.confirmed,
                   blocked: created.blocked,
                 },
