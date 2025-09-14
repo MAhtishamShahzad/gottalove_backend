@@ -35,6 +35,7 @@ export default {
           confirmed: Boolean
           blocked: Boolean
           documentId: ID!
+          phone_number: String!
         }
 
         type SignupPayload {
@@ -65,6 +66,7 @@ export default {
             username: String!
             email: String!
             password: String!
+            phone_number: String!
           ): SignupPayload
         }
       `,
