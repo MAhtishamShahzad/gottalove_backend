@@ -514,9 +514,12 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
+    languages: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::event.event'> &
       Schema.Attribute.Private;
+    max_price: Schema.Attribute.Decimal;
+    min_price: Schema.Attribute.Decimal;
     name: Schema.Attribute.String;
     Occurs: Schema.Attribute.Enumeration<
       ['once', 'daily', 'weekly', 'monthly', 'yearly']

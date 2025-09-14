@@ -69,6 +69,15 @@
         "hour 12",
         "hour 24"
       ]
+    },
+    "min_price": {
+      "type": "decimal"
+    },
+    "max_price": {
+      "type": "decimal"
+    },
+    "languages": {
+      "type": "string"
     }
   }
 }
