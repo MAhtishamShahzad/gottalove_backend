@@ -45,6 +45,9 @@
     },
     "expiresAt": {
       "type": "date"
+    },
+    "vocher_code": {
+      "type": "string"
     }
   }
 }

@@ -627,6 +627,7 @@ export interface ApiVoucherVoucher extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    vocher_code: Schema.Attribute.String;
     vochers_status: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     vouchers_category: Schema.Attribute.Relation<
       'manyToOne',
