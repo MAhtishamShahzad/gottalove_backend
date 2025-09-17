@@ -1,5 +1,9 @@
 import QRCode from "qrcode";
 import crypto from "node:crypto";
+import { Readable } from "node:stream";
+import { writeFile, unlink } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 const ensureToken = (data: any) => {
   if (
@@ -11,7 +15,8 @@ const ensureToken = (data: any) => {
   }
 };
 
-const generateSixDigit = () => String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
+const generateSixDigit = () =>
+  String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
 
 const ensureEntryCode = async (data: any, currentId?: string | number) => {
   const isValid = (v: any) => typeof v === "string" && /^\d{6}$/.test(v);
@@ -59,16 +64,52 @@ const makeQRBuffer = async (token: string) => {
 
 const uploadBufferAsImage = async (buffer: Buffer, fileName: string) => {
   const uploadService = (strapi as any).plugin("upload").service("upload");
+  console.log("uploading", buffer);
+
+  // Write buffer to a temporary file so Strapi upload service can create a read stream from path
+  const tmpFileName = `${Date.now()}-${fileName}`;
+  const tmpPath = path.join(os.tmpdir(), tmpFileName);
+  await writeFile(tmpPath, buffer);
+
+  console.log("tmpPath", tmpPath, fileName);
+
   const file = {
+    // Provide both keys for compatibility with different parsers
+    path: tmpPath,
+    filepath: tmpPath,
+    tmpPath: tmpPath,
     name: fileName,
+    filename: fileName,
+    originalFilename: fileName,
     type: "image/png",
+    mime: "image/png",
+    mimetype: "image/png",
+    ext: ".png",
     size: buffer.length,
-    buffer,
   } as any;
 
-  const uploaded = await uploadService.upload({ data: {}, files: file });
-  const first = Array.isArray(uploaded) ? uploaded[0] : uploaded;
-  return first;
+  try {
+    const uploaded = await uploadService.upload({
+      data: {
+        fileInfo: {
+          name: fileName,
+          alternativeText: "QR code",
+          caption: "Auto-generated QR image",
+        },
+      },
+      files: [file],
+    });
+    console.log("uploaded", uploaded);
+    const first = Array.isArray(uploaded) ? uploaded[0] : uploaded;
+    return first;
+  } finally {
+    // Cleanup temp file regardless of success/failure
+    try {
+      await unlink(tmpPath);
+    } catch (err) {
+      // ignore cleanup errors
+    }
+  }
 };
 
 export default {
@@ -115,7 +156,10 @@ export default {
       const providedTokenValid =
         typeof providedToken === "string" && providedToken.trim().length > 0;
       if (!providedTokenValid) {
-        if (typeof tokenCurrent === "string" && tokenCurrent.trim().length > 0) {
+        if (
+          typeof tokenCurrent === "string" &&
+          tokenCurrent.trim().length > 0
+        ) {
           data.qrToken = tokenCurrent;
         } else {
           // No current token exists either, generate a fresh one
