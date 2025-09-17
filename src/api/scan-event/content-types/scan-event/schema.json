@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "scan_events",
+  "info": {
+    "singularName": "scan-event",
+    "pluralName": "scan-events",
+    "displayName": "Scan Event"
+  },
+  "options": { "draftAndPublish": false },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "location": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::location.location",
+      "required": true
+    },
+    "pointsAwarded": { "type": "integer", "required": true },
+    "scannedAt": { "type": "datetime" },
+    "nonce": { "type": "string" }
+  }
+}

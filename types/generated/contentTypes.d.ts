@@ -373,6 +373,40 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiAppSettingAppSetting extends Struct.SingleTypeSchema {
+  collectionName: 'app_settings';
+  info: {
+    description: 'Global scan/redeem settings';
+    displayName: 'App Settings';
+    pluralName: 'app-settings';
+    singularName: 'app-setting';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    defaultPointsPerScan: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<1>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::app-setting.app-setting'
+    > &
+      Schema.Attribute.Private;
+    perDay: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
+    perLocationOverrides: Schema.Attribute.JSON;
+    perMonth: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<10>;
+    perWeek: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<3>;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiDirectoryCategoryDirectoryCategory
   extends Struct.CollectionTypeSchema {
   collectionName: 'directory_categories';
@@ -566,15 +600,121 @@ export interface ApiGenreGenre extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiLegendsCardLegendsCard extends Struct.CollectionTypeSchema {
-  collectionName: 'legends_cards';
+export interface ApiLocationLocation extends Struct.CollectionTypeSchema {
+  collectionName: 'locations';
   info: {
-    displayName: 'Legends Card';
-    pluralName: 'legends-cards';
-    singularName: 'legends-card';
+    description: 'Participating business location with QR';
+    displayName: 'Location';
+    pluralName: 'locations';
+    singularName: 'location';
   };
   options: {
     draftAndPublish: true;
+  };
+  attributes: {
+    address: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    entryCode: Schema.Attribute.String & Schema.Attribute.Unique;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::location.location'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    qrImage: Schema.Attribute.Media;
+    qrToken: Schema.Attribute.String & Schema.Attribute.Private;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiMemberCardMemberCard extends Struct.CollectionTypeSchema {
+  collectionName: 'member_cards';
+  info: {
+    displayName: 'Member Card';
+    pluralName: 'member-cards';
+    singularName: 'member-card';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    card_status: Schema.Attribute.Enumeration<['active', 'suspended']> &
+      Schema.Attribute.DefaultTo<'active'>;
+    cardNumber: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    issuedAt: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::member-card.member-card'
+    > &
+      Schema.Attribute.Private;
+    pointsBalance: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    publishedAt: Schema.Attribute.DateTime;
+    tier: Schema.Attribute.Enumeration<['Legends']> &
+      Schema.Attribute.DefaultTo<'Legends'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
+export interface ApiRewardReward extends Struct.CollectionTypeSchema {
+  collectionName: 'rewards';
+  info: {
+    displayName: 'Reward';
+    pluralName: 'rewards';
+    singularName: 'reward';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    costPoints: Schema.Attribute.Integer & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text;
+    inventory: Schema.Attribute.Integer;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::reward.reward'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiScanEventScanEvent extends Struct.CollectionTypeSchema {
+  collectionName: 'scan_events';
+  info: {
+    displayName: 'Scan Event';
+    pluralName: 'scan-events';
+    singularName: 'scan-event';
+  };
+  options: {
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -583,17 +723,23 @@ export interface ApiLegendsCardLegendsCard extends Struct.CollectionTypeSchema {
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::legends-card.legends-card'
+      'api::scan-event.scan-event'
     > &
       Schema.Attribute.Private;
-    name: Schema.Attribute.String;
-    points: Schema.Attribute.String;
+    location: Schema.Attribute.Relation<'manyToOne', 'api::location.location'> &
+      Schema.Attribute.Required;
+    nonce: Schema.Attribute.String;
+    pointsAwarded: Schema.Attribute.Integer & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
+    scannedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    valid_from: Schema.Attribute.Date;
-    valid_id: Schema.Attribute.UID;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
   };
 }
 
@@ -1179,12 +1325,16 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::app-setting.app-setting': ApiAppSettingAppSetting;
       'api::directory-category.directory-category': ApiDirectoryCategoryDirectoryCategory;
       'api::directory-sub-category.directory-sub-category': ApiDirectorySubCategoryDirectorySubCategory;
       'api::directory.directory': ApiDirectoryDirectory;
       'api::event.event': ApiEventEvent;
       'api::genre.genre': ApiGenreGenre;
-      'api::legends-card.legends-card': ApiLegendsCardLegendsCard;
+      'api::location.location': ApiLocationLocation;
+      'api::member-card.member-card': ApiMemberCardMemberCard;
+      'api::reward.reward': ApiRewardReward;
+      'api::scan-event.scan-event': ApiScanEventScanEvent;
       'api::voucher.voucher': ApiVoucherVoucher;
       'api::vouchers-category.vouchers-category': ApiVouchersCategoryVouchersCategory;
       'plugin::content-releases.release': PluginContentReleasesRelease;

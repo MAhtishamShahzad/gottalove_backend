@@ -1,0 +1,47 @@
+{
+  "kind": "collectionType",
+  "collectionName": "member_cards",
+  "info": {
+    "singularName": "member-card",
+    "pluralName": "member-cards",
+    "displayName": "Member Card"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "cardNumber": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "pointsBalance": {
+      "type": "integer",
+      "default": 0
+    },
+    "card_status": {
+      "type": "enumeration",
+      "default": "active",
+      "enum": [
+        "active",
+        "suspended"
+      ]
+    },
+    "tier": {
+      "type": "enumeration",
+      "default": "Legends",
+      "enum": [
+        "Legends"
+      ]
+    },
+    "issuedAt": {
+      "type": "datetime"
+    }
+  }
+}

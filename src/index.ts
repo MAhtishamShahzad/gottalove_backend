@@ -35,13 +35,64 @@ export default {
           confirmed: Boolean
           blocked: Boolean
           documentId: ID!
-          phone_number: String!
+          phone_number: String
         }
 
         type SignupPayload {
           ok: Boolean!
           jwt: String
           user: SignupUser
+        }
+
+        type Location {
+          id: ID!
+          name: String!
+        }
+
+        type ScanEvent {
+          id: ID!
+          pointsAwarded: Int!
+          scannedAt: DateTime
+          location: Location
+        }
+
+        type Reward {
+          id: ID!
+          title: String!
+          description: String
+          costPoints: Int!
+          active: Boolean
+        }
+
+        type Settings {
+          id: ID!
+          defaultPointsPerScan: Int!
+          perDay: Int!
+          perWeek: Int!
+          perMonth: Int!
+        }
+
+        type LimitsSummary {
+          perDay: Int!
+          perWeek: Int!
+          perMonth: Int!
+          todayCount: Int!
+          weekCount: Int!
+          monthCount: Int!
+        }
+
+        type ScanResult {
+          ok: Boolean!
+          pointsAwarded: Int
+          balance: Int
+          limits: LimitsSummary
+        }
+
+        type RedeemPayload {
+          ok: Boolean!
+          balance: Int
+          redemptionId: ID
+          status: String
         }
 
         # Extend built-in UsersPermissionsUser to expose documentId
@@ -51,6 +102,10 @@ export default {
 
         extend type Query {
           usernameExists(username: String!): Boolean!
+          myCard: JSON
+          myTransactions(limit: Int, from: DateTime, to: DateTime): [ScanEvent]
+          rewards(activeOnly: Boolean): [Reward]
+          settings: Settings
         }
 
         extend type Mutation {
@@ -68,6 +123,8 @@ export default {
             password: String!
             phone_number: String!
           ): SignupPayload
+          scanQRCode(qrToken: String!): ScanResult
+          redeemReward(rewardId: ID!): RedeemPayload
         }
       `,
       resolvers: {
@@ -82,6 +139,61 @@ export default {
                 .findFirst({ filters: { username: { $eq: username } } });
 
               return !!existing;
+            },
+          },
+          myCard: {
+            resolve: async (_: unknown, _args: unknown, ctx: any) => {
+              const userId = ctx?.state?.user?.id;
+              if (!userId) throw new Error("Unauthorized");
+              const cards = await (strapi as any).entityService.findMany(
+                "api::member-card.member-card",
+                { filters: { user: { id: { $eq: userId } } }, limit: 1 }
+              );
+              return Array.isArray(cards) ? cards[0] : cards;
+            },
+          },
+          myTransactions: {
+            resolve: async (
+              _: unknown,
+              args: { limit?: number; from?: string; to?: string },
+              ctx: any
+            ) => {
+              const userId = ctx?.state?.user?.id;
+              if (!userId) throw new Error("Unauthorized");
+              const filters: any = { user: { id: { $eq: userId } } };
+              if (args?.from || args?.to) {
+                filters.scannedAt = {};
+                if (args.from) filters.scannedAt.$gte = args.from;
+                if (args.to) filters.scannedAt.$lte = args.to;
+              }
+              return (strapi as any).entityService.findMany(
+                "api::scan-event.scan-event",
+                {
+                  filters,
+                  sort: { scannedAt: "DESC" },
+                  limit: args?.limit ?? 20,
+                  populate: { location: true },
+                }
+              );
+            },
+          },
+          rewards: {
+            resolve: async (_: unknown, args: { activeOnly?: boolean }) => {
+              const filters: any = {};
+              if (args?.activeOnly) filters.active = { $eq: true };
+              return (strapi as any).entityService.findMany(
+                "api::reward.reward",
+                { filters }
+              );
+            },
+          },
+          settings: {
+            resolve: async () => {
+              const items = await (strapi as any).entityService.findMany(
+                "api::app-setting.app-setting",
+                {}
+              );
+              return Array.isArray(items) ? items[0] : items;
             },
           },
         },
@@ -251,7 +363,9 @@ export default {
               const password = args.password;
               const phone_number = args.phone_number?.trim();
               if (!email || !username || !password || !phone_number) {
-                throw new Error("email, username, password and phone_number are required");
+                throw new Error(
+                  "email, username, password and phone_number are required"
+                );
               }
 
               // Ensure email/username not taken
@@ -297,6 +411,43 @@ export default {
               );
               const jwt = await jwtService.issue({ id: created.id });
 
+              // Auto-create Legends MemberCard with defaults if missing
+              try {
+                const existingCards = await (
+                  strapi as any
+                ).entityService.findMany("api::member-card.member-card", {
+                  filters: { user: { id: { $eq: created.id } } },
+                  limit: 1,
+                });
+                let card = Array.isArray(existingCards)
+                  ? existingCards[0]
+                  : existingCards;
+                if (!card) {
+                  const rnd = Math.random()
+                    .toString(16)
+                    .slice(2, 10)
+                    .toUpperCase();
+                  card = await (strapi as any).entityService.create(
+                    "api::member-card.member-card",
+                    {
+                      data: {
+                        user: created.id,
+                        cardNumber: `LEG-${rnd}`,
+                        pointsBalance: 0,
+                        status: "active",
+                        tier: "Legends",
+                        issuedAt: new Date(),
+                      },
+                    }
+                  );
+                }
+              } catch (e) {
+                // Non-fatal: user created, but card creation failed
+                strapi.log.warn(
+                  `MemberCard auto-create failed: ${e?.message ?? e}`
+                );
+              }
+
               return {
                 ok: true,
                 jwt,
@@ -310,6 +461,179 @@ export default {
                   confirmed: created.confirmed,
                   blocked: created.blocked,
                 },
+              };
+            },
+          },
+          scanQRCode: {
+            resolve: async (
+              _: unknown,
+              args: { qrToken: string },
+              ctx: any
+            ) => {
+              const userId = ctx?.state?.user?.id;
+              if (!userId) throw new Error("Unauthorized");
+
+              const locationRes = await (strapi as any).entityService.findMany(
+                "api::location.location",
+                {
+                  filters: {
+                    qrToken: { $eq: args.qrToken },
+                    isActive: { $eq: true },
+                  },
+                  limit: 1,
+                }
+              );
+              const loc = Array.isArray(locationRes)
+                ? locationRes[0]
+                : locationRes;
+              if (!loc) throw new Error("Invalid or inactive location QR");
+
+              const settingsArr = await (strapi as any).entityService.findMany(
+                "api::app-setting.app-setting",
+                {}
+              );
+              const settings = Array.isArray(settingsArr)
+                ? settingsArr[0]
+                : settingsArr;
+              const pointsPerScan: number = settings?.defaultPointsPerScan ?? 1;
+              const perDay: number = settings?.perDay ?? 1;
+              const perWeek: number = settings?.perWeek ?? 3;
+              const perMonth: number = settings?.perMonth ?? 10;
+
+              const now = new Date();
+              const startOfDay = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate()
+              );
+              const dayOfWeek = (now.getDay() + 6) % 7;
+              const startOfWeek = new Date(startOfDay);
+              startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
+              const startOfMonth = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                1
+              );
+
+              const countInWindow = async (from: Date) => {
+                const res = await (strapi as any).entityService.findMany(
+                  "api::scan-event.scan-event",
+                  {
+                    filters: {
+                      user: { id: { $eq: userId } },
+                      scannedAt: { $gte: from.toISOString() },
+                    },
+                    limit: 0,
+                  }
+                );
+                return Array.isArray(res) ? res.length : 0;
+              };
+
+              const todayCount = await countInWindow(startOfDay);
+              const weekCount = await countInWindow(startOfWeek);
+              const monthCount = await countInWindow(startOfMonth);
+
+              if (todayCount >= perDay)
+                throw new Error("Daily scan limit reached");
+              if (weekCount >= perWeek)
+                throw new Error("Weekly scan limit reached");
+              if (monthCount >= perMonth)
+                throw new Error("Monthly scan limit reached");
+
+              // ensure card exists
+              const cards = await (strapi as any).entityService.findMany(
+                "api::member-card.member-card",
+                { filters: { user: { id: { $eq: userId } } }, limit: 1 }
+              );
+              const card = Array.isArray(cards) ? cards[0] : cards;
+              if (!card) throw new Error("Member card not found");
+
+              await (strapi as any).entityService.create(
+                "api::scan-event.scan-event",
+                {
+                  data: {
+                    user: userId,
+                    location: loc.id,
+                    pointsAwarded: pointsPerScan,
+                    scannedAt: new Date(),
+                  },
+                }
+              );
+
+              const newBalance = (card.pointsBalance ?? 0) + pointsPerScan;
+              await (strapi as any).entityService.update(
+                "api::member-card.member-card",
+                card.id,
+                { data: { pointsBalance: newBalance } }
+              );
+
+              return {
+                ok: true,
+                pointsAwarded: pointsPerScan,
+                balance: newBalance,
+                limits: {
+                  perDay,
+                  perWeek,
+                  perMonth,
+                  todayCount: todayCount + 1,
+                  weekCount: weekCount + 1,
+                  monthCount: monthCount + 1,
+                },
+              };
+            },
+          },
+          redeemReward: {
+            resolve: async (
+              _: unknown,
+              args: { rewardId: string },
+              ctx: any
+            ) => {
+              const userId = ctx?.state?.user?.id;
+              if (!userId) throw new Error("Unauthorized");
+
+              const reward = await (strapi as any).entityService.findOne(
+                "api::reward.reward",
+                args.rewardId
+              );
+              if (!reward || reward.active === false)
+                throw new Error("Reward not available");
+
+              const cards = await (strapi as any).entityService.findMany(
+                "api::member-card.member-card",
+                { filters: { user: { id: { $eq: userId } } }, limit: 1 }
+              );
+              const card = Array.isArray(cards) ? cards[0] : cards;
+              if (!card) throw new Error("Member card not found");
+
+              const balance = card.pointsBalance ?? 0;
+              if (balance < reward.costPoints)
+                throw new Error("Insufficient points");
+
+              const redemption = await (strapi as any).entityService.create(
+                "api::redemption.redemption",
+                {
+                  data: {
+                    user: userId,
+                    reward: args.rewardId,
+                    pointsSpent: reward.costPoints,
+                    status: "approved",
+                    redeemedAt: new Date(),
+                  },
+                }
+              );
+
+              const newBalance = balance - reward.costPoints;
+              await (strapi as any).entityService.update(
+                "api::member-card.member-card",
+                card.id,
+                { data: { pointsBalance: newBalance } }
+              );
+
+              return {
+                ok: true,
+                balance: newBalance,
+                redemptionId: redemption.id,
+                status: redemption.status,
               };
             },
           },
@@ -331,6 +655,10 @@ export default {
         "Query.usernameExists": {
           auth: false,
         },
+        "Query.myCard": { auth: true },
+        "Query.myTransactions": { auth: true },
+        "Query.rewards": { auth: true },
+        "Query.settings": { auth: true },
         "Mutation.requestEmailOTP": {
           auth: false,
         },
@@ -346,6 +674,8 @@ export default {
         "Mutation.login": {
           auth: false,
         },
+        "Mutation.scanQRCode": { auth: true },
+        "Mutation.redeemReward": { auth: true },
       },
     }));
   },
@@ -357,5 +687,30 @@ export default {
    * This gives you an opportunity to set up your data model,
    * run jobs, or perform some special logic.
    */
-  async bootstrap({ strapi }: { strapi: Core.Strapi }) {},
+  async bootstrap({ strapi }: { strapi: Core.Strapi }) {
+    // Seed App Settings singleton if missing
+    try {
+      const list = await (strapi as any).entityService.findMany(
+        "api::app-setting.app-setting",
+        {}
+      );
+      const item = Array.isArray(list) ? list[0] : list;
+      if (!item) {
+        await (strapi as any).entityService.create(
+          "api::app-setting.app-setting",
+          {
+            data: {
+              defaultPointsPerScan: 1,
+              perDay: 1,
+              perWeek: 3,
+              perMonth: 10,
+            },
+          }
+        );
+        strapi.log.info("Seeded App Settings with defaults");
+      }
+    } catch (e) {
+      strapi.log.warn(`App Settings seed failed: ${e?.message ?? e}`);
+    }
+  },
 };

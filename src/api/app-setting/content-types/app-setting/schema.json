@@ -1,0 +1,19 @@
+{
+  "kind": "singleType",
+  "collectionName": "app_settings",
+  "info": {
+    "singularName": "app-setting",
+    "pluralName": "app-settings",
+    "displayName": "App Settings",
+    "description": "Global scan/redeem settings"
+  },
+  "options": { "draftAndPublish": false },
+  "pluginOptions": {},
+  "attributes": {
+    "defaultPointsPerScan": { "type": "integer", "default": 1 },
+    "perDay": { "type": "integer", "default": 1 },
+    "perWeek": { "type": "integer", "default": 3 },
+    "perMonth": { "type": "integer", "default": 10 },
+    "perLocationOverrides": { "type": "json" }
+  }
+}
