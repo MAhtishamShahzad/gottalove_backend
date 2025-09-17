@@ -604,7 +604,7 @@ export interface ApiLocationLocation extends Struct.CollectionTypeSchema {
   collectionName: 'locations';
   info: {
     description: 'Participating business location with QR';
-    displayName: 'Location';
+    displayName: 'QR Code Locations';
     pluralName: 'locations';
     singularName: 'location';
   };
