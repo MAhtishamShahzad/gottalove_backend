@@ -125,6 +125,7 @@ export default {
           ): SignupPayload
           scanQRCode(qrToken: String!): ScanResult
           redeemReward(rewardId: ID!): RedeemPayload
+          ensureMyCard: JSON
         }
       `,
       resolvers: {
@@ -416,7 +417,9 @@ export default {
                 const existingCards = await (
                   strapi as any
                 ).entityService.findMany("api::member-card.member-card", {
-                  filters: { user: { id: { $eq: created.id } } },
+                  filters: {
+                    user: { documentId: { $eq: created.documentId } },
+                  },
                   limit: 1,
                 });
                 let card = Array.isArray(existingCards)
@@ -431,7 +434,7 @@ export default {
                     "api::member-card.member-card",
                     {
                       data: {
-                        user: created.id,
+                        user: created.documentId,
                         cardNumber: `LEG-${rnd}`,
                         pointsBalance: 0,
                         status: "active",
@@ -540,13 +543,79 @@ export default {
               if (monthCount >= perMonth)
                 throw new Error("Monthly scan limit reached");
 
-              // ensure card exists
-              const cards = await (strapi as any).entityService.findMany(
+              // ensure card exists (prefer documentId relation)
+              let userDoc: any = null;
+              try {
+                userDoc = await strapi
+                  .documents("plugin::users-permissions.user")
+                  .findFirst({ filters: { id: { $eq: userId } } });
+              } catch (e) {}
+
+              const userDocumentId = userDoc?.documentId;
+
+              let cards = await (strapi as any).entityService.findMany(
                 "api::member-card.member-card",
-                { filters: { user: { id: { $eq: userId } } }, limit: 1 }
+                {
+                  filters: userDocumentId
+                    ? { user: { documentId: { $eq: userDocumentId } } }
+                    : { user: { id: { $eq: userId } } },
+                  limit: 1,
+                }
               );
-              const card = Array.isArray(cards) ? cards[0] : cards;
-              if (!card) throw new Error("Member card not found");
+              let card = Array.isArray(cards) ? cards[0] : cards;
+              if (!card && userDocumentId) {
+                const byIdFallback = await (
+                  strapi as any
+                ).entityService.findMany("api::member-card.member-card", {
+                  filters: { user: { id: { $eq: userId } } },
+                  limit: 1,
+                });
+                card = Array.isArray(byIdFallback)
+                  ? byIdFallback[0]
+                  : byIdFallback;
+              }
+
+              if (!card) {
+                const generateUniqueCardNumber = async (): Promise<string> => {
+                  const maxAttempts = 10;
+                  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    const rnd = Math.random()
+                      .toString(16)
+                      .slice(2, 10)
+                      .toUpperCase();
+                    const candidate = `LEG-${rnd}`;
+                    const existing = await (
+                      strapi as any
+                    ).entityService.findMany("api::member-card.member-card", {
+                      filters: { cardNumber: { $eq: candidate } },
+                      limit: 1,
+                    });
+                    const exists = Array.isArray(existing)
+                      ? existing.length > 0
+                      : Boolean(existing);
+                    if (!exists) return candidate;
+                  }
+                  throw new Error(
+                    "Failed to generate unique card number. Please try again."
+                  );
+                };
+
+                const cardNumber = await generateUniqueCardNumber();
+                const userRelation = userDocumentId ?? userId;
+                card = await (strapi as any).entityService.create(
+                  "api::member-card.member-card",
+                  {
+                    data: {
+                      user: userRelation,
+                      cardNumber,
+                      pointsBalance: 0,
+                      status: "active",
+                      tier: "Legends",
+                      issuedAt: new Date(),
+                    },
+                  }
+                );
+              }
 
               await (strapi as any).entityService.create(
                 "api::scan-event.scan-event",
@@ -637,6 +706,79 @@ export default {
               };
             },
           },
+          ensureMyCard: {
+            resolve: async (_: unknown, __: unknown, ctx: any) => {
+              const userId = ctx?.state?.user?.id;
+              if (!userId) throw new Error("Unauthorized");
+
+              // Try to fetch user document to get documentId (for relations using documentId)
+              let userDoc: any = null;
+              try {
+                userDoc = await strapi
+                  .documents("plugin::users-permissions.user")
+                  .findFirst({ filters: { id: { $eq: userId } } });
+              } catch (e) {
+                // ignore if documents not enabled
+              }
+
+              const userDocumentId = userDoc?.documentId;
+
+              // Try by user id first
+              let card = await strapi
+                .documents("api::member-card.member-card")
+                .findFirst({
+                  filters: { user: { documentId: { $eq: userDocumentId } } },
+                  limit: 1,
+                });
+
+              if (card) return card;
+
+              // Helper to generate a unique card number
+              const generateUniqueCardNumber = async (): Promise<string> => {
+                const maxAttempts = 10;
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                  const rnd = Math.random()
+                    .toString(16)
+                    .slice(2, 10)
+                    .toUpperCase();
+                  const candidate = `LEG-${rnd}`;
+                  const existing = await strapi
+                    .documents("api::member-card.member-card")
+                    .findMany({
+                      filters: { cardNumber: { $eq: candidate } },
+                      limit: 1,
+                    });
+                  const exists = Array.isArray(existing)
+                    ? existing.length > 0
+                    : Boolean(existing);
+                  if (!exists) return candidate;
+                }
+                throw new Error(
+                  "Failed to generate unique card number. Please try again."
+                );
+              };
+
+              const cardNumber = await generateUniqueCardNumber();
+
+              // Use documentId if available, else fallback to numeric id
+              const userRelation = userDocumentId ?? userId;
+
+              card = await strapi
+                .documents("api::member-card.member-card")
+                .create({
+                  data: {
+                    user: userRelation,
+                    cardNumber,
+                    pointsBalance: 0,
+                    status: "active",
+                    tier: "Legends",
+                    issuedAt: new Date(),
+                  },
+                });
+
+              return card;
+            },
+          },
         },
       },
       UsersPermissionsUser: {
@@ -676,6 +818,7 @@ export default {
         },
         "Mutation.scanQRCode": { auth: true },
         "Mutation.redeemReward": { auth: true },
+        "Mutation.ensureMyCard": { auth: true },
       },
     }));
   },
