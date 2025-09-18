@@ -15,6 +15,33 @@ const ensureToken = (data: any) => {
   }
 };
 
+const ensureUniqueToken = async (data: any, currentId?: string | number) => {
+  let token =
+    typeof data.qrToken === "string" && data.qrToken.trim().length > 0
+      ? data.qrToken.trim()
+      : undefined;
+
+  const gen = () => crypto.randomBytes(24).toString("hex");
+
+  for (let i = 0; i < 10; i++) {
+    if (!token) token = gen();
+    const filters: any = { qrToken: { $eq: token } };
+    if (currentId) filters.id = { $ne: currentId };
+    const existing = await (strapi as any).entityService.findMany(
+      "api::location.location",
+      { filters, limit: 1 }
+    );
+    const taken = Array.isArray(existing) ? existing[0] : existing;
+    if (!taken) {
+      data.qrToken = token;
+      return;
+    }
+    token = undefined;
+  }
+  // Fallback after attempts
+  data.qrToken = gen();
+};
+
 const generateSixDigit = () =>
   String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
 
@@ -117,6 +144,7 @@ export default {
     try {
       const data = event.params?.data || {};
       ensureToken(data);
+      await ensureUniqueToken(data);
       await ensureEntryCode(data);
 
       if (!data.qrImage) {
@@ -166,6 +194,8 @@ export default {
           ensureToken(data);
         }
       }
+      // Ensure uniqueness of the final token value (preserve if unique; regenerate otherwise)
+      await ensureUniqueToken(data, whereId);
 
       // Preserve existing entryCode if not provided; still ensure uniqueness
       if (!data.entryCode && current?.entryCode) {

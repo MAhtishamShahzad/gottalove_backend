@@ -29,7 +29,7 @@
     },
     "qrToken": {
       "type": "string",
-      "private": true
+      "unique": true
     },
     "qrImage": {
       "type": "media",
