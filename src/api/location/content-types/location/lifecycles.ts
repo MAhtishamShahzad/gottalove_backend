@@ -77,7 +77,7 @@ const ensureEntryCode = async (data: any, currentId?: string | number) => {
   }
 
   // Fallback after attempts
-  data.entryCode = generateSixDigit();
+  // data.entryCode = generateSixDigit();
 };
 
 const makeQRBuffer = async (token: string) => {
