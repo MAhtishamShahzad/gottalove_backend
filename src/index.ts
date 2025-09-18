@@ -798,6 +798,7 @@ export default {
           auth: false,
         },
         "Query.myCard": { auth: true },
+        "Query.memberCards": { auth: true },
         "Query.myTransactions": { auth: true },
         "Query.rewards": { auth: true },
         "Query.settings": { auth: true },
