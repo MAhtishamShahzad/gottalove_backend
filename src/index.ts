@@ -95,6 +95,24 @@ export default {
           status: String
         }
 
+        """
+        Member card type representing loyalty card data.
+        """
+        type MemberCard {
+          id: ID!
+          documentId: ID
+          cardNumber: String!
+          pointsBalance: Int
+          card_status: String
+          status: String
+          tier: String
+          issuedAt: DateTime
+          createdAt: DateTime
+          updatedAt: DateTime
+          publishedAt: DateTime
+          locale: String
+        }
+
         # Extend built-in UsersPermissionsUser to expose documentId
         extend type UsersPermissionsUser {
           documentId: ID
@@ -125,7 +143,7 @@ export default {
           ): SignupPayload
           scanQRCode(qrToken: String!): ScanResult
           redeemReward(rewardId: ID!): RedeemPayload
-          ensureMyCard: JSON
+          ensureMyCard: MemberCard
         }
       `,
       resolvers: {
@@ -792,6 +810,20 @@ export default {
             .findFirst({ filters: { id: { $eq: parent.id } } });
           return userDoc?.documentId ?? null;
         },
+      },
+      MemberCard: {
+        documentId: async (parent: any) => {
+          if (parent?.documentId) return parent.documentId;
+          try {
+            const doc = await (strapi as any)
+              .documents("api::member-card.member-card")
+              .findFirst({ filters: { id: { $eq: parent.id } } });
+            return doc?.documentId ?? null;
+          } catch (e) {
+            return null;
+          }
+        },
+        card_status: (parent: any) => parent?.card_status ?? parent?.status ?? null,
       },
       resolversConfig: {
         "Query.usernameExists": {
