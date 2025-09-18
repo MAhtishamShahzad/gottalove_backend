@@ -43,7 +43,9 @@ const ensureUniqueToken = async (data: any, currentId?: string | number) => {
 };
 
 const generateSixDigit = () =>
-  String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
+  String(Math.floor(Math.random() * 1_000_000))
+    .padStart(6, "0")
+    .toString();
 
 const ensureEntryCode = async (data: any, currentId?: string | number) => {
   const isValid = (v: any) => typeof v === "string" && /^\d{6}$/.test(v);
@@ -146,71 +148,13 @@ export default {
       ensureToken(data);
       await ensureUniqueToken(data);
       await ensureEntryCode(data);
+      console.log("datadatadatadatadata", data);
 
       if (!data.qrImage) {
         const buffer = await makeQRBuffer(data.qrToken);
         const uploaded = await uploadBufferAsImage(buffer, `location-qr.png`);
         console.log("uploaded", uploaded);
 
-        if (uploaded?.id) {
-          data.qrImage = uploaded.id;
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  },
-
-  async beforeUpdate(event: any) {
-    try {
-      const data = event.params?.data || {};
-
-      const whereId = event.params?.where?.id;
-      let current: any = null;
-      if (whereId) {
-        current = await (strapi as any).entityService.findOne(
-          "api::location.location",
-          whereId,
-          {
-            populate: { qrImage: true },
-          }
-        );
-      }
-
-      const tokenCurrent = current?.qrToken as string | undefined;
-
-      // Preserve existing token on update if not explicitly provided
-      const providedToken = data.qrToken;
-      const providedTokenValid =
-        typeof providedToken === "string" && providedToken.trim().length > 0;
-      if (!providedTokenValid) {
-        if (
-          typeof tokenCurrent === "string" &&
-          tokenCurrent.trim().length > 0
-        ) {
-          data.qrToken = tokenCurrent;
-        } else {
-          // No current token exists either, generate a fresh one
-          ensureToken(data);
-        }
-      }
-      // Ensure uniqueness of the final token value (preserve if unique; regenerate otherwise)
-      await ensureUniqueToken(data, whereId);
-
-      // Preserve existing entryCode if not provided; still ensure uniqueness
-      if (!data.entryCode && current?.entryCode) {
-        data.entryCode = current.entryCode;
-      }
-      await ensureEntryCode(data, whereId);
-
-      const finalToken = data.qrToken as string | undefined;
-      const tokenChanged =
-        typeof finalToken === "string" && finalToken !== tokenCurrent;
-      const imageMissingAfterUpdate = !data.qrImage && !current?.qrImage;
-
-      if (tokenChanged || imageMissingAfterUpdate) {
-        const buffer = await makeQRBuffer(data.qrToken);
-        const uploaded = await uploadBufferAsImage(buffer, `location-qr.png`);
         if (uploaded?.id) {
           data.qrImage = uploaded.id;
         }
