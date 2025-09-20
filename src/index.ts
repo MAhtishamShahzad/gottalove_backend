@@ -799,7 +799,7 @@ export default {
         },
         "Query.myCard": { auth: true },
         "Query.scanEvents": { auth: true },
-        "Query.locations": { auth: true },
+        // "Query.locations": { auth: true },
         "Query.memberCards": { auth: true },
         "Query.myTransactions": { auth: true },
         "Query.rewards": { auth: true },

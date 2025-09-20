@@ -144,17 +144,21 @@ const uploadBufferAsImage = async (buffer: Buffer, fileName: string) => {
 export default {
   async beforeCreate(event: any) {
     try {
-      const data = event.params?.data || {};
+      const { data } = event.params;
       ensureToken(data);
-      await ensureUniqueToken(data);
-      await ensureEntryCode(data);
       console.log("datadatadatadatadata", data);
 
+      if (!data?.qrToken) {
+        await ensureUniqueToken(data);
+      }
+      if (!data?.entryCode) {
+        await ensureEntryCode(data);
+      }
+      console.log("datadatadatadatadata", data);
       if (!data.qrImage) {
         const buffer = await makeQRBuffer(data.qrToken);
         const uploaded = await uploadBufferAsImage(buffer, `location-qr.png`);
         console.log("uploaded", uploaded);
-
         if (uploaded?.id) {
           data.qrImage = uploaded.id;
         }
