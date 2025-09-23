@@ -407,6 +407,35 @@ export interface ApiAppSettingAppSetting extends Struct.SingleTypeSchema {
   };
 }
 
+export interface ApiBannerBanner extends Struct.CollectionTypeSchema {
+  collectionName: 'banners';
+  info: {
+    displayName: 'Banner';
+    pluralName: 'banners';
+    singularName: 'banner';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    image: Schema.Attribute.Text;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::banner.banner'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiDirectoryCategoryDirectoryCategory
   extends Struct.CollectionTypeSchema {
   collectionName: 'directory_categories';
@@ -1326,6 +1355,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::app-setting.app-setting': ApiAppSettingAppSetting;
+      'api::banner.banner': ApiBannerBanner;
       'api::directory-category.directory-category': ApiDirectoryCategoryDirectoryCategory;
       'api::directory-sub-category.directory-sub-category': ApiDirectorySubCategoryDirectorySubCategory;
       'api::directory.directory': ApiDirectoryDirectory;
