@@ -4,4 +4,4 @@
 
 import { factories } from "@strapi/strapi";
 
-export default factories.createCoreRouter("api::location.location");
+export default factories.createCoreRouter("api::genre.genre");
