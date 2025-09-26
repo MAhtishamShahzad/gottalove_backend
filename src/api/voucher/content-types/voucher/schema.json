@@ -30,24 +30,22 @@
     "image": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
+      "allowedTypes": ["images", "files", "videos", "audios"]
     },
     "description": {
       "type": "text"
     },
     "discount": {
-      "type": "biginteger"
+      "type": "string"
     },
     "expiresAt": {
       "type": "date"
     },
     "vocher_code": {
       "type": "string"
+    },
+    "details": {
+      "type": "blocks"
     }
   }
 }

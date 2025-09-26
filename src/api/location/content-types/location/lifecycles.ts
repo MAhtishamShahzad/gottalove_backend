@@ -157,7 +157,10 @@ export default {
       console.log("datadatadatadatadata", data);
       if (!data.qrImage) {
         const buffer = await makeQRBuffer(data.qrToken);
-        const uploaded = await uploadBufferAsImage(buffer, `location-qr.png`);
+        const uploaded = await uploadBufferAsImage(
+          buffer,
+          `${data.name}-qr${Math.floor(Math.random() * 1_000_000)}.png`
+        );
         console.log("uploaded", uploaded);
         if (uploaded?.id) {
           data.qrImage = uploaded.id;
