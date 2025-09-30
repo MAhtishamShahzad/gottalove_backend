@@ -536,6 +536,7 @@ export interface ApiDirectoryDirectory extends Struct.CollectionTypeSchema {
       'api::directory-sub-category.directory-sub-category'
     >;
     email: Schema.Attribute.String;
+    facebook: Schema.Attribute.String;
     heading: Schema.Attribute.String;
     image: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
